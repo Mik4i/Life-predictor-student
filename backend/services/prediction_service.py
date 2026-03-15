@@ -8,6 +8,7 @@ import joblib
 import numpy as np
 from datetime import datetime, timezone
 from sqlalchemy.orm import Session
+import requests
 
 from utils.preprocessing import (
     preprocess_for_mental_model,
@@ -26,6 +27,9 @@ MENTAL_MODEL_PATH = os.path.join(MODELS_DIR, "mental_model.pkl")
 PRODUCTIVITY_MODEL_PATH = os.path.join(MODELS_DIR, "productivity_model.pkl")
 
 
+MENTAL_MODEL_URL = "https://huggingface.co/mik412/Life-Predictor-Models/resolve/main/mental_model.pkl?download=true"
+PRODUCTIVITY_MODEL_URL = "https://huggingface.co/mik412/Life-Predictor-Models/resolve/main/productivity_model.pkl?download=true"
+
 # ─────────────────────────────────────────────
 # Load Model (Singleton — load sekali saat startup)
 # ─────────────────────────────────────────────
@@ -33,25 +37,41 @@ PRODUCTIVITY_MODEL_PATH = os.path.join(MODELS_DIR, "productivity_model.pkl")
 _mental_package = None
 _productivity_package = None
 
+def download_file(url: str, dest_path: str):
+    """Download a file from an URL to a destination path."""
+    print(f"Mengunduh model dari {url}...")
+    try:
+        response = requests.get(url, stream=True)
+        response.raise_for_status()
+        with open(dest_path, 'wb') as f:
+            for chunk in response.iter_content(chunk_size=8192):
+                f.write(chunk)
+        print(f"Berhasil mengunduh dan menyimpan ke {dest_path}")
+    except Exception as e:
+        print(f"Gagal mengunduh model: {e}")
+        if os.path.exists(dest_path):
+            os.remove(dest_path)
+        raise e
+
 
 def load_models():
-    """Load model ML dari file .pkl jika belum dimuat."""
+    """Load model ML dari file .pkl. Jika belum ada, download dari cloud (Hugging Face)."""
     global _mental_package, _productivity_package
 
     if _mental_package is None:
         if not os.path.exists(MENTAL_MODEL_PATH):
-            raise FileNotFoundError(
-                f"Model mental tidak ditemukan: {MENTAL_MODEL_PATH}\n"
-                "Jalankan: python models/train_model.py"
-            )
+            print(f"Model mental tidak ditemukan lokal. Mencoba download...")
+            os.makedirs(MODELS_DIR, exist_ok=True)
+            download_file(MENTAL_MODEL_URL, MENTAL_MODEL_PATH)
+            
         _mental_package = joblib.load(MENTAL_MODEL_PATH)
 
     if _productivity_package is None:
         if not os.path.exists(PRODUCTIVITY_MODEL_PATH):
-            raise FileNotFoundError(
-                f"Model produktivitas tidak ditemukan: {PRODUCTIVITY_MODEL_PATH}\n"
-                "Jalankan: python models/train_model.py"
-            )
+            print(f"Model produktivitas tidak ditemukan lokal. Mencoba download...")
+            os.makedirs(MODELS_DIR, exist_ok=True)
+            download_file(PRODUCTIVITY_MODEL_URL, PRODUCTIVITY_MODEL_PATH)
+            
         _productivity_package = joblib.load(PRODUCTIVITY_MODEL_PATH)
 
 
