@@ -541,7 +541,7 @@ export default function HomePage() {
           </div>
         </div>
         <div className="max-w-7xl mx-auto mt-16 pt-8 border-t border-slate-200/50 flex flex-col md:flex-row justify-between items-center gap-4 text-[11px] font-bold text-slate-400 uppercase tracking-widest">
-          <span>© 2024 LifeAI Technologies. All rights reserved.</span>
+          <span>© 2024 Mik4i. All rights reserved.</span>
           <span className="text-slate-300">Not intended as medical diagnosis.</span>
         </div>
       </footer>
